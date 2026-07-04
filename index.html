@@ -450,6 +450,24 @@
                 </section>
               </div>
             </main>
+
+            <div class="modal-backdrop" id="wizardBackdrop" aria-hidden="true">
+              <div class="modal">
+                <div class="modal-header">
+                  <h2 style="margin:0;font-size:1.25rem;">Property Setup Wizard</h2>
+                  <button class="btn ghost" id="closeWizard">Close</button>
+                </div>
+                <div class="modal-body">
+                  <p id="wizardStepLabel" style="font-size:0.9rem;font-weight:600;color:var(--slate-600);margin-bottom:1rem;">Step 1 of 3</p>
+                  <div id="wizardBody"></div>
+                </div>
+                <div class="modal-footer">
+                  <button class="btn secondary" id="backWizard" style="visibility:hidden;">Back</button>
+                  <button class="btn primary" id="nextWizard">Next</button>
+                  <button class="btn primary hidden" id="submitWizard">Submit</button>
+                </div>
+              </div>
+            </div>
           </div>`;
       }
 
