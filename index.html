@@ -29,8 +29,9 @@
       }
 
       * { box-sizing: border-box; }
-      html { scroll-behavior: smooth; }
-      body {
+      html, body {
+        height: 100dvh;
+        overflow: hidden;
         margin: 0;
         font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         background: #eef4f8;
@@ -39,7 +40,7 @@
       a { color: inherit; text-decoration: none; }
       button, input, textarea { font: inherit; }
       .shell {
-        min-height: 100vh;
+        height: 100dvh;
         width: 100%;
         background:
           radial-gradient(circle at top left, rgba(47,143,87,0.16), transparent 28%),
@@ -48,7 +49,7 @@
       .layout {
         display: grid;
         grid-template-columns: 18rem 1fr;
-        min-height: 100vh;
+        height: 100dvh;
         width: 100%;
       }
       .sidebar {
@@ -88,6 +89,7 @@
         border: 1px solid #dff2e4;
       }
       .content {
+        overflow-y: auto;
         padding: 1rem;
         width: 100%;
       }
@@ -193,20 +195,21 @@
       .skeleton { border-radius: 1rem; background: #dbe5ef; animation: pulse 1.8s ease-in-out infinite; }
       @keyframes pulse { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
 
-      .tenant-shell {
-        width: min(29rem, 100%);
-        margin: 0 auto;
-        padding: 1rem 1rem 2rem;
-      }
       .tenant-wrap {
-        min-height: 100vh;
+        height: 100dvh;
         width: 100%;
         display: flex;
         align-items: center;
         justify-content: center;
+        overflow-y: auto;
         background:
           radial-gradient(circle at top, rgba(47,143,87,0.18), transparent 38%),
           linear-gradient(180deg, #f8fafc 0%, #eef4f7 100%);
+      }
+      .tenant-shell {
+        width: min(29rem, 100%);
+        margin: auto;
+        padding: 1rem;
       }
       .tenant-card { overflow: hidden; }
       .tenant-hero {
@@ -258,6 +261,7 @@
         padding: 1rem;
         z-index: 50;
       }
+      .modal-backdrop.open { display: flex; }
       .modal { width: 100%; max-width: 44rem; overflow: hidden; }
       .modal-header, .modal-footer { padding: 1.1rem 1.25rem; }
       .modal-header { border-bottom: 1px solid var(--slate-200); display: flex; justify-content: space-between; gap: 1rem; }
@@ -265,7 +269,36 @@
       .modal-footer { border-top: 1px solid var(--slate-200); display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
       .hidden { display: none !important; }
 
-      .skeleton-layout { min-height: 100vh; width: 100%; display: grid; grid-template-columns: 18rem 1fr; gap: 1rem; padding: 1rem; }
+      .toast-container {
+        position: fixed;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        z-index: 100;
+        pointer-events: none;
+      }
+      .toast {
+        pointer-events: auto;
+        border-radius: 1rem;
+        padding: 1rem 1.25rem;
+        background: var(--ink-900);
+        color: white;
+        font-size: 0.95rem;
+        font-weight: 500;
+        box-shadow: var(--shadow);
+        animation: toastIn 0.3s ease-out;
+        max-width: 22rem;
+      }
+      .toast.success { background: #166534; }
+      .toast.warning { background: #92400e; }
+      @keyframes toastIn {
+        0% { opacity: 0; transform: translateY(1rem); }
+        100% { opacity: 1; transform: translateY(0); }
+      }
+
+      .skeleton-layout { height: 100dvh; width: 100%; display: grid; grid-template-columns: 18rem 1fr; gap: 1rem; padding: 1rem; }
       .skeleton-col { border-radius: 1.5rem; background: rgba(255,255,255,0.65); border: 1px solid rgba(148,163,184,0.24); box-shadow: var(--shadow); padding: 1.25rem; }
 
       @media (min-width: 1024px) {
@@ -285,9 +318,37 @@
   </head>
   <body>
     <div id="app"></div>
+    <div class="toast-container" id="toastContainer"></div>
 
     <script>
       const app = document.getElementById('app');
+      const toastContainer = document.getElementById('toastContainer');
+
+      function showToast(message, type = 'success') {
+        const el = document.createElement('div');
+        el.className = `toast ${type}`;
+        el.textContent = message;
+        toastContainer.appendChild(el);
+        setTimeout(() => {
+          el.style.opacity = '0';
+          el.style.transition = 'opacity 0.3s';
+          setTimeout(() => el.remove(), 300);
+        }, 3000);
+      }
+
+      function renderModal(title, bodyHtml, footerHtml) {
+        return `
+          <div class="modal-backdrop open" id="dynamicModal">
+            <div class="modal">
+              <div class="modal-header">
+                <h2 style="margin:0;font-size:1.25rem;">${title}</h2>
+                <button class="btn ghost" id="closeDynamicModal">Close</button>
+              </div>
+              <div class="modal-body">${bodyHtml}</div>
+              <div class="modal-footer">${footerHtml || ''}</div>
+            </div>
+          </div>`;
+      }
 
       function getRoute() {
         return (location.hash || '#landlord').replace(/^#/, '');
@@ -389,26 +450,6 @@
                 </section>
               </div>
             </main>
-
-            <div class="modal-backdrop" id="wizardBackdrop" aria-hidden="true">
-              <div class="modal">
-                <div class="modal-header">
-                  <div>
-                    <p class="eyebrow" id="wizardStepLabel">Step 1 of 3</p>
-                    <h2 style="margin-top:0.35rem;font-size:1.4rem;">Property address</h2>
-                  </div>
-                  <button class="btn ghost" id="closeWizard">Close</button>
-                </div>
-                <div class="modal-body" id="wizardBody"></div>
-                <div class="modal-footer">
-                  <div><button class="btn secondary" id="backWizard">Back</button></div>
-                  <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
-                    <button class="btn secondary" id="nextWizard">Next</button>
-                    <button class="btn primary hidden" id="submitWizard">Finish</button>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>`;
       }
 
@@ -499,11 +540,11 @@
                 <div style="display:grid;gap:0.9rem;margin-top:1rem;">
                   <label class="field-box" style="padding:0; border:0;">
                     <span style="display:block;font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;">Describe the issue...</span>
-                    <textarea placeholder="Describe the issue..." rows="5"></textarea>
+                    <textarea placeholder="Describe the issue..." rows="5" id="issueTextarea"></textarea>
                   </label>
                   <label style="display:flex;align-items:center;justify-content:center;border-radius:1rem;border:2px dashed var(--slate-200);background:var(--slate-50);padding:1rem;cursor:pointer;font-weight:700;color:var(--slate-600);">
                     Take Photo/Upload
-                    <input type="file" accept="image/*" style="display:none;" />
+                    <input type="file" accept="image/*" style="display:none;" id="photoUpload" />
                   </label>
                   <button class="btn primary" style="height:3.5rem;width:100%;border-radius:1rem;" data-action="submit-issue">Submit Issue</button>
                 </div>
@@ -519,12 +560,29 @@
 
       function renderWizardBody(step) {
         if (step === 0) {
-          return `<div class="wizard-grid"><label class="field-box"><label>Street address</label><input placeholder="123 Smith St" /></label><label class="field-box"><label>State</label><input placeholder="NSW" /></label><label class="field-box"><label>Suburb</label><input placeholder="Surry Hills" /></label><label class="field-box"><label>Postcode</label><input placeholder="2010" /></label></div>`;
+          return `<div class="wizard-grid"><label class="field-box"><label>Street address</label><input placeholder="123 Smith St" id="wiz-address" /></label><label class="field-box"><label>State</label><input placeholder="NSW" id="wiz-state" /></label><label class="field-box"><label>Suburb</label><input placeholder="Surry Hills" id="wiz-suburb" /></label><label class="field-box"><label>Postcode</label><input placeholder="2010" id="wiz-postcode" /></label></div>`;
         }
         if (step === 1) {
-          return `<div class="wizard-grid"><label class="field-box"><label>Tenant name</label><input placeholder="John Doe" /></label><label class="field-box"><label>Tenant email</label><input placeholder="john@example.com" /></label><label class="field-box"><label>Move-in date</label><input placeholder="2026-07-15" /></label><label class="field-box"><label>Lease term</label><input placeholder="12 months" /></label></div>`;
+          return `<div class="wizard-grid"><label class="field-box"><label>Tenant name</label><input placeholder="John Doe" id="wiz-name" /></label><label class="field-box"><label>Tenant email</label><input placeholder="john@example.com" id="wiz-email" /></label><label class="field-box"><label>Move-in date</label><input placeholder="2026-07-15" id="wiz-movein" /></label><label class="field-box"><label>Lease term</label><input placeholder="12 months" id="wiz-term" /></label></div>`;
         }
-        return `<div class="wizard-grid"><label class="field-box"><label>Rent amount</label><input placeholder="$450.00" /></label><label class="field-box"><label>Frequency</label><input placeholder="Weekly" /></label><label class="field-box"><label>First due date</label><input placeholder="2026-07-11" /></label><label class="field-box"><label>Bond amount</label><input placeholder="$1,800.00" /></label></div>`;
+        return `<div class="wizard-grid"><label class="field-box"><label>Rent amount</label><input placeholder="$450.00" id="wiz-rent" /></label><label class="field-box"><label>Frequency</label><input placeholder="Weekly" id="wiz-frequency" /></label><label class="field-box"><label>First due date</label><input placeholder="2026-07-11" id="wiz-due" /></label><label class="field-box"><label>Bond amount</label><input placeholder="$1,800.00" id="wiz-bond" /></label></div>`;
+      }
+
+      function openModal(title, bodyHtml, footerHtml) {
+        const existing = document.getElementById('dynamicModal');
+        if (existing) existing.remove();
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = renderModal(title, bodyHtml, footerHtml);
+        document.body.appendChild(wrapper.firstElementChild);
+        document.getElementById('closeDynamicModal').addEventListener('click', closeDynamicModal);
+        document.getElementById('dynamicModal').addEventListener('click', (e) => {
+          if (e.target === e.currentTarget) closeDynamicModal();
+        });
+      }
+
+      function closeDynamicModal() {
+        const el = document.getElementById('dynamicModal');
+        if (el) el.remove();
       }
 
       function render() {
@@ -594,6 +652,7 @@
         submitBtn.addEventListener('click', () => {
           backdrop.style.display = 'none';
           backdrop.setAttribute('aria-hidden', 'true');
+          showToast('Property and tenancy created successfully!');
         });
 
         document.getElementById('steps').innerHTML = renderSteps(step);
@@ -613,23 +672,81 @@
               return;
             }
             if (action === 'pay-rent') {
-              alert('Rent payment flow opened.');
+              openModal(
+                'Pay Rent',
+                `<div style="display:grid;gap:1.25rem;">
+                  <div style="text-align:center;padding:1rem 0;">
+                    <p style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.2em;font-weight:600;color:var(--sage-700);margin:0;">Amount Due</p>
+                    <p style="font-size:2.5rem;font-weight:700;margin:0.5rem 0 0;">$450.00</p>
+                    <p style="color:var(--slate-500);margin:0.25rem 0 0;">Due Tuesday, July 7</p>
+                  </div>
+                  <label class="field-box" style="padding:0;border:0;">
+                    <span style="display:block;font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;">Payment method</span>
+                    <select style="width:100%;border:1px solid var(--slate-200);border-radius:0.8rem;padding:0.8rem 0.9rem;outline:none;background:white;">
+                      <option>Visa ending in 4242</option>
+                      <option>Bank transfer</option>
+                    </select>
+                  </label>
+                </div>`,
+                `<button class="btn primary" id="confirmPayment">Pay $450.00</button>`
+              );
+              setTimeout(() => {
+                document.getElementById('confirmPayment')?.addEventListener('click', () => {
+                  closeDynamicModal();
+                  showToast('Payment of $450.00 submitted successfully!');
+                });
+              }, 50);
               return;
             }
             if (action === 'report-issue') {
-              document.querySelector('textarea[placeholder="Describe the issue..."]')?.focus();
+              document.getElementById('issueTextarea')?.focus();
               return;
             }
             if (action === 'submit-issue') {
-              alert('Maintenance issue submitted.');
+              const textarea = document.getElementById('issueTextarea');
+              const text = textarea?.value?.trim();
+              if (!text) {
+                showToast('Please describe the issue before submitting.', 'warning');
+                return;
+              }
+              if (textarea) textarea.value = '';
+              const upload = document.getElementById('photoUpload');
+              if (upload) upload.value = '';
+              showToast('Maintenance issue reported successfully!');
               return;
             }
             if (action === 'review') {
-              alert(`Reviewing ${element.getAttribute('data-alert')}.`);
+              const alertType = element.getAttribute('data-alert');
+              const isBurst = alertType === 'burst-water-pipe';
+              openModal(
+                isBurst ? 'Review: Burst Water Pipe' : 'Review: Rent Overdue',
+                isBurst
+                  ? `<div style="display:grid;gap:1rem;">
+                      <div class="field-box"><label>Property</label><div style="color:var(--ink-900);">123 Smith St, Surry Hills NSW</div></div>
+                      <div class="field-box"><label>Issue</label><div style="color:var(--ink-900);">Burst water pipe in kitchen. Water leaking into downstairs unit.</div></div>
+                      <div class="field-box"><label>SLA Deadline</label><div style="color:var(--red-700);font-weight:600;">14 hours remaining</div></div>
+                      <div class="field-box"><label>Tenant</label><div style="color:var(--ink-900);">Alex Taylor</div></div>
+                    </div>`,
+                  `<div style="display:grid;gap:1rem;">
+                      <div class="field-box"><label>Tenant</label><div style="color:var(--ink-900);">John Doe</div></div>
+                      <div class="field-box"><label>Property</label><div style="color:var(--ink-900);">123 Smith St, Surry Hills NSW</div></div>
+                      <div class="field-box"><label>Amount Due</label><div style="color:var(--ink-900);">$450.00</div></div>
+                      <div class="field-box"><label>Days Overdue</label><div style="color:var(--amber-800);font-weight:600;">3 days</div></div>
+                    </div>`,
+                `<button class="btn primary" id="dismissReview">Acknowledge</button>`
+              );
+              setTimeout(() => {
+                document.getElementById('dismissReview')?.addEventListener('click', () => {
+                  closeDynamicModal();
+                  showToast(isBurst ? 'Maintenance team has been notified.' : 'Overdue notice acknowledged.');
+                });
+              }, 50);
               return;
             }
             if (action === 'snooze') {
               element.closest('[data-alert]')?.remove();
+              showToast('Alert snoozed for 24 hours.');
+              return;
             }
           });
         });

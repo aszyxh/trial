@@ -42,6 +42,9 @@ const config: Config = {
       animation: {
         fadeUp: "fadeUp 0.45s ease-out both",
         pulseSoft: "pulseSoft 1.8s ease-in-out infinite"
+      },
+      zIndex: {
+        "100": "100"
       }
     }
   },

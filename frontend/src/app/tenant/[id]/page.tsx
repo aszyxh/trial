@@ -8,17 +8,34 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function TenantPortalPage({ params }: { params: { id: string } }) {
   const [isLoading] = useState(false);
+  const [paymentModal, setPaymentModal] = useState(false);
+  const [issueText, setIssueText] = useState("");
+  const [toast, setToast] = useState<string | null>(null);
   const tenantName = "Alex Taylor";
   const address = "123 Smith St, Surry Hills NSW 2010";
   const rentDue = "$450 Due Next Tuesday";
+
+  const showToast = (message: string) => {
+    setToast(message);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleSubmitIssue = () => {
+    if (!issueText.trim()) {
+      showToast("Please describe the issue before submitting.");
+      return;
+    }
+    setIssueText("");
+    showToast("Maintenance issue reported successfully!");
+  };
 
   if (isLoading) {
     return <TenantSkeleton />;
   }
 
   return (
-    <main className="min-h-screen bg-tenant px-4 py-5 text-ink-900 sm:px-6 sm:py-8 lg:flex lg:items-center lg:justify-center">
-      <div className="mx-auto flex w-full max-w-md flex-col gap-4 lg:max-w-sm">
+    <main className="h-dvh bg-tenant px-4 py-5 text-ink-900 sm:px-6 sm:py-8 lg:flex lg:items-center lg:justify-center lg:overflow-hidden">
+      <div className="mx-auto flex w-full max-w-md flex-col gap-4 overflow-y-auto lg:max-w-sm lg:max-h-dvh lg:py-4">
         <Card className="overflow-hidden p-5 shadow-soft animate-fadeUp">
           <div className="rounded-3xl bg-ink-900 px-5 py-5 text-white shadow-insetGlow">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-sage-100">Tenant Portal</p>
@@ -29,12 +46,19 @@ export default function TenantPortalPage({ params }: { params: { id: string } })
         </Card>
 
         <div className="grid gap-4">
-          <Button className="h-24 flex-col items-start justify-center rounded-[1.75rem] px-6 py-5 text-left shadow-soft">
+          <Button
+            className="h-24 flex-col items-start justify-center rounded-[1.75rem] px-6 py-5 text-left shadow-soft"
+            onClick={() => setPaymentModal(true)}
+          >
             <span className="text-2xl font-semibold">Pay Rent</span>
             <span className="mt-2 text-sm text-white/80">{rentDue}</span>
           </Button>
 
-          <Button className="h-24 flex-col items-start justify-center rounded-[1.75rem] px-6 py-5 text-left shadow-soft" variant="secondary">
+          <Button
+            className="h-24 flex-col items-start justify-center rounded-[1.75rem] px-6 py-5 text-left shadow-soft"
+            variant="secondary"
+            onClick={() => document.getElementById("issueTextarea")?.focus()}
+          >
             <span className="text-2xl font-semibold">Report an Issue</span>
             <span className="mt-2 text-sm text-slate-500">Log a maintenance problem in under a minute.</span>
           </Button>
@@ -49,7 +73,10 @@ export default function TenantPortalPage({ params }: { params: { id: string } })
             <label className="block space-y-2 text-sm font-medium text-slate-700">
               <span>Describe the issue...</span>
               <textarea
+                id="issueTextarea"
                 rows={5}
+                value={issueText}
+                onChange={(e) => setIssueText(e.target.value)}
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-sage-600 focus:ring-2 focus:ring-sage-100"
                 placeholder="Describe the issue..."
               />
@@ -60,17 +87,55 @@ export default function TenantPortalPage({ params }: { params: { id: string } })
               <input type="file" accept="image/*" className="sr-only" />
             </label>
 
-            <Button className="h-14 w-full rounded-2xl">Submit Issue</Button>
+            <Button className="h-14 w-full rounded-2xl" onClick={handleSubmitIssue}>Submit Issue</Button>
           </div>
         </Card>
       </div>
+
+      {/* Payment modal */}
+      {paymentModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 py-6 backdrop-blur-sm">
+          <Card className="w-full max-w-sm overflow-hidden">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+              <h2 className="text-xl font-semibold text-ink-900">Pay Rent</h2>
+              <Button variant="ghost" onClick={() => setPaymentModal(false)}>Close</Button>
+            </div>
+            <div className="space-y-4 px-6 py-6">
+              <div className="text-center">
+                <p className="text-xs font-semibold uppercase tracking-wider text-sage-700">Amount Due</p>
+                <p className="mt-1 text-4xl font-bold text-ink-900">$450.00</p>
+                <p className="mt-1 text-sm text-slate-500">Due Tuesday, July 7</p>
+              </div>
+              <label className="block space-y-2 text-sm font-medium text-slate-700">
+                <span>Payment method</span>
+                <select className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-ink-900 outline-none">
+                  <option>Visa ending in 4242</option>
+                  <option>Bank transfer</option>
+                </select>
+              </label>
+            </div>
+            <div className="flex justify-end border-t border-slate-200 px-6 py-5">
+              <Button onClick={() => { setPaymentModal(false); showToast("Payment of $450.00 submitted successfully!"); }}>
+                Pay $450.00
+              </Button>
+            </div>
+          </Card>
+        </div>
+      ) : null}
+
+      {/* Toast */}
+      {toast ? (
+        <div className="fixed bottom-6 right-6 z-100 animate-fadeUp rounded-2xl bg-ink-900 px-5 py-4 text-sm font-medium text-white shadow-soft">
+          {toast}
+        </div>
+      ) : null}
     </main>
   );
 }
 
 function TenantSkeleton() {
   return (
-    <main className="min-h-screen bg-tenant px-4 py-5 sm:px-6 sm:py-8 lg:flex lg:items-center lg:justify-center">
+    <main className="h-dvh bg-tenant px-4 py-5 sm:px-6 sm:py-8 lg:flex lg:items-center lg:justify-center lg:overflow-hidden">
       <div className="mx-auto flex w-full max-w-md flex-col gap-4">
         <Skeleton className="h-44 w-full rounded-[1.75rem]" />
         <Skeleton className="h-24 w-full rounded-[1.75rem]" />
