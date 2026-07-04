@@ -65,14 +65,21 @@
       }
       .sidebar h1, .tenant-card h1, .modal h2, .section h3 { margin: 0; }
       .nav { margin-top: 2.5rem; display: grid; gap: 0.5rem; }
-      .nav a {
+      .nav a,
+      .nav button {
         padding: 0.9rem 1rem;
         border-radius: 1rem;
         color: var(--slate-600);
         background: transparent;
+        border: 0;
+        text-align: left;
+        width: 100%;
+        cursor: pointer;
       }
-      .nav a.active { background: var(--ink-900); color: white; }
-      .nav a:not(.active):hover { background: var(--slate-100); }
+      .nav a.active,
+      .nav button.active { background: var(--ink-900); color: white; }
+      .nav a:not(.active):hover,
+      .nav button:not(.active):hover { background: var(--slate-100); }
       .sidebar-footer {
         margin-top: auto;
         padding: 1.25rem;
@@ -135,6 +142,10 @@
       .btn.secondary { background: white; color: var(--ink-900); border: 1px solid var(--slate-200); }
       .btn.ghost { background: transparent; color: var(--ink-900); }
       .grid-2 { display: grid; gap: 1rem; }
+      .properties-grid {
+        display: grid;
+        gap: 1rem;
+      }
       .panel { padding: 1.5rem; }
       .steps { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
       .step-pill {
@@ -171,6 +182,13 @@
         background: var(--slate-50);
         border: 1px solid var(--slate-200);
         color: var(--slate-500);
+      }
+      .property-card {
+        padding: 1.25rem;
+        border-radius: 1.35rem;
+        background: white;
+        border: 1px solid var(--slate-200);
+        box-shadow: var(--shadow);
       }
       .skeleton { border-radius: 1rem; background: #dbe5ef; animation: pulse 1.8s ease-in-out infinite; }
       @keyframes pulse { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
@@ -255,6 +273,7 @@
         .content { padding: 2rem; margin-left: 18rem; }
         .alerts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .grid-2 { grid-template-columns: 1.35fr 0.9fr; }
+        .properties-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         .wizard-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .dashboard { gap: 1.25rem; }
       }
@@ -288,10 +307,10 @@
                 <p class="subtle">Exception-based visibility for Australian property portfolios.</p>
               </div>
               <nav class="nav">
-                <a class="active" href="/">Dashboard</a>
-                <a href="#">Properties</a>
-                <a href="#">Tenants</a>
-                <a href="#">Maintenance</a>
+                <button class="active" data-route="landlord">Dashboard</button>
+                <button data-route="properties">Properties</button>
+                <button data-route="tenant/123">Tenants</button>
+                <button data-route="landlord#maintenance">Maintenance</button>
               </nav>
               <div class="sidebar-footer">
                 <p class="eyebrow">Portfolio Health</p>
@@ -302,6 +321,7 @@
             <main class="content">
               <div class="dashboard">
                 <div style="display:flex;justify-content:flex-end;gap:0.75rem;flex-wrap:wrap;">
+                  <button class="btn secondary" data-route="properties">Open Properties</button>
                   <button class="btn secondary" data-route="tenant/123">Open Tenant View</button>
                   <button class="btn primary" data-action="open-wizard">Open Wizard</button>
                 </div>
@@ -392,6 +412,66 @@
           </div>`;
       }
 
+      function propertiesView() {
+        return `
+          <div class="shell layout">
+            <aside class="sidebar">
+              <div>
+                <p class="eyebrow">Automated Property Manager</p>
+                <h1 style="margin-top:0.75rem;font-size:1.8rem;">Properties</h1>
+                <p class="subtle">A full-width portfolio view for desktop screens.</p>
+              </div>
+              <nav class="nav">
+                <button data-route="landlord">Dashboard</button>
+                <button class="active" data-route="properties">Properties</button>
+                <button data-route="tenant/123">Tenants</button>
+                <button data-route="landlord#maintenance">Maintenance</button>
+              </nav>
+              <div class="sidebar-footer">
+                <p class="eyebrow">Portfolio Health</p>
+                <p class="subtle" style="margin-top:0.6rem;">This view is intentionally wide and desktop-first.</p>
+              </div>
+            </aside>
+
+            <main class="content">
+              <div class="dashboard" style="max-width:none;">
+                <div style="display:flex;justify-content:space-between;gap:0.75rem;flex-wrap:wrap;align-items:center;">
+                  <div>
+                    <p class="eyebrow">Portfolio</p>
+                    <h2 class="title" style="font-size:2rem;">Properties</h2>
+                    <p class="subtle">A desktop view for scanning the portfolio without the narrow mobile treatment.</p>
+                  </div>
+                  <button class="btn primary" data-route="landlord">Back to Dashboard</button>
+                </div>
+
+                <section class="properties-grid">
+                  <article class="property-card">
+                    <p class="eyebrow">Occupied</p>
+                    <h3 class="title" style="font-size:1.25rem;">123 Smith St</h3>
+                    <p class="subtle">John Doe - Rent paid this cycle.</p>
+                  </article>
+                  <article class="property-card">
+                    <p class="eyebrow">Exception</p>
+                    <h3 class="title" style="font-size:1.25rem;">88 George Rd</h3>
+                    <p class="subtle">Burst pipe alert under SLA tracking.</p>
+                  </article>
+                  <article class="property-card">
+                    <p class="eyebrow">Preparing</p>
+                    <h3 class="title" style="font-size:1.25rem;">4 Bay View Ave</h3>
+                    <p class="subtle">Turnover scheduled for new tenancy.</p>
+                  </article>
+                </section>
+
+                <section class="card panel">
+                  <p class="eyebrow">Property Details</p>
+                  <h3 class="title" style="font-size:1.8rem;margin-top:0.35rem;">Select a property to inspect notes, rent, and maintenance</h3>
+                  <p class="subtle">This section fills the available screen width on desktop instead of collapsing into a narrow phone-sized column.</p>
+                </section>
+              </div>
+            </main>
+          </div>`;
+      }
+
       function tenantView() {
         const route = getRoute();
         const propertyId = route.split('/')[1] || '123';
@@ -449,6 +529,12 @@
 
       function render() {
         const route = getRoute();
+
+        if (route.startsWith('properties')) {
+          app.innerHTML = propertiesView();
+          bindActions();
+          return;
+        }
 
         if (route.startsWith('tenant')) {
           app.innerHTML = tenantView();
