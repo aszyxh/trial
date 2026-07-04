@@ -1,0 +1,556 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#07111f" />
+    <title>Automated Property Manager</title>
+    <style>
+      :root {
+        --ink-900: #07111f;
+        --ink-800: #0f1a2d;
+        --ink-700: #1a2740;
+        --sage-50: #f4fbf6;
+        --sage-100: #def4e4;
+        --sage-600: #2f8f57;
+        --sage-700: #237246;
+        --slate-50: #f8fafc;
+        --slate-100: #eef2f7;
+        --slate-200: #d8e0ea;
+        --slate-500: #64748b;
+        --slate-600: #475569;
+        --red-50: #fef2f2;
+        --red-200: #fecaca;
+        --red-700: #b91c1c;
+        --amber-50: #fffbeb;
+        --amber-200: #fde68a;
+        --amber-800: #92400e;
+        --shadow: 0 20px 45px rgba(7, 17, 31, 0.1);
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #eef4f8;
+        color: var(--ink-900);
+      }
+      a { color: inherit; text-decoration: none; }
+      button, input, textarea { font: inherit; }
+      .shell {
+        min-height: 100vh;
+        width: 100%;
+        background:
+          radial-gradient(circle at top left, rgba(47,143,87,0.16), transparent 28%),
+          linear-gradient(180deg, #f6f9fc 0%, #eef4f8 100%);
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: 18rem 1fr;
+        min-height: 100vh;
+        width: 100%;
+      }
+      .sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: 18rem;
+        padding: 2rem 1.5rem;
+        background: rgba(255,255,255,0.9);
+        border-right: 1px solid rgba(148,163,184,0.22);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(18px);
+        display: none;
+        flex-direction: column;
+      }
+      .sidebar h1, .tenant-card h1, .modal h2, .section h3 { margin: 0; }
+      .nav { margin-top: 2.5rem; display: grid; gap: 0.5rem; }
+      .nav a {
+        padding: 0.9rem 1rem;
+        border-radius: 1rem;
+        color: var(--slate-600);
+        background: transparent;
+      }
+      .nav a.active { background: var(--ink-900); color: white; }
+      .nav a:not(.active):hover { background: var(--slate-100); }
+      .sidebar-footer {
+        margin-top: auto;
+        padding: 1.25rem;
+        border-radius: 1.5rem;
+        background: var(--sage-50);
+        border: 1px solid #dff2e4;
+      }
+      .content {
+        padding: 1rem;
+        width: 100%;
+      }
+      .dashboard {
+        width: 100%;
+        max-width: none;
+        margin: 0 auto;
+        display: grid;
+        gap: 1rem;
+      }
+      .banner, .card, .tenant-card, .modal {
+        border-radius: 1.5rem;
+        background: white;
+        box-shadow: var(--shadow);
+        border: 1px solid rgba(148,163,184,0.24);
+      }
+      .banner {
+        padding: 1.25rem;
+        background: var(--sage-50);
+        border-color: #ccefd7;
+      }
+      .eyebrow {
+        text-transform: uppercase;
+        letter-spacing: 0.28em;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--sage-700);
+        margin: 0;
+      }
+      .title { margin: 0.35rem 0 0; font-size: 1.25rem; font-weight: 700; }
+      .banner .title { color: var(--sage-700); }
+      .subtle { margin: 0.5rem 0 0; color: var(--slate-600); line-height: 1.6; font-size: 0.95rem; }
+      .alerts { display: grid; gap: 1rem; }
+      .alert {
+        padding: 1.25rem;
+        border-radius: 1.5rem;
+        border: 1px solid;
+      }
+      .alert.red { background: var(--red-50); border-color: var(--red-200); color: var(--red-700); }
+      .alert.amber { background: var(--amber-50); border-color: var(--amber-200); color: var(--amber-800); }
+      .alert h4 { margin: 0.8rem 0 0; color: var(--ink-900); font-size: 1.05rem; }
+      .alert p { margin: 0.35rem 0 0; color: var(--slate-600); }
+      .button-row { display: flex; gap: 0.75rem; margin-top: 1.25rem; flex-wrap: wrap; }
+      .btn {
+        border: 0;
+        border-radius: 0.9rem;
+        padding: 0.82rem 1rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .btn.primary { background: var(--ink-900); color: white; }
+      .btn.secondary { background: white; color: var(--ink-900); border: 1px solid var(--slate-200); }
+      .btn.ghost { background: transparent; color: var(--ink-900); }
+      .grid-2 { display: grid; gap: 1rem; }
+      .panel { padding: 1.5rem; }
+      .steps { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+      .step-pill {
+        border-radius: 999px;
+        padding: 0.55rem 0.8rem;
+        font-size: 0.72rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        background: white;
+        border: 1px solid var(--slate-200);
+        color: var(--slate-500);
+        font-weight: 700;
+      }
+      .step-pill.active { background: var(--ink-900); color: white; border-color: var(--ink-900); }
+      .wizard-grid { display: grid; gap: 1rem; margin-top: 1rem; }
+      .field-box {
+        border-radius: 1rem;
+        border: 1px solid var(--slate-200);
+        padding: 1rem;
+        background: white;
+      }
+      .field-box label { display: block; font-size: 0.9rem; font-weight: 600; color: var(--slate-600); margin-bottom: 0.45rem; }
+      .field-box input, .field-box textarea {
+        width: 100%;
+        border: 1px solid var(--slate-200);
+        border-radius: 0.8rem;
+        padding: 0.8rem 0.9rem;
+        outline: none;
+      }
+      .field-box textarea { resize: vertical; min-height: 7rem; }
+      .muted-card {
+        border-radius: 1.25rem;
+        padding: 1rem;
+        background: var(--slate-50);
+        border: 1px solid var(--slate-200);
+        color: var(--slate-500);
+      }
+      .skeleton { border-radius: 1rem; background: #dbe5ef; animation: pulse 1.8s ease-in-out infinite; }
+      @keyframes pulse { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
+
+      .tenant-shell {
+        width: min(29rem, 100%);
+        margin: 0 auto;
+        padding: 1rem 1rem 2rem;
+      }
+      .tenant-wrap {
+        min-height: 100vh;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background:
+          radial-gradient(circle at top, rgba(47,143,87,0.18), transparent 38%),
+          linear-gradient(180deg, #f8fafc 0%, #eef4f7 100%);
+      }
+      .tenant-card { overflow: hidden; }
+      .tenant-hero {
+        background: var(--ink-900);
+        color: white;
+        padding: 1.25rem;
+        border-radius: 1.25rem;
+      }
+      .tenant-hero p { margin: 0; }
+      .tenant-hero .address { margin-top: 0.4rem; color: #e2e8f0; line-height: 1.5; font-size: 0.94rem; }
+      .tenant-hero .badge {
+        display: inline-flex;
+        margin-top: 1rem;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.1);
+        padding: 0.35rem 0.75rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--sage-100);
+      }
+      .big-action {
+        height: 6.25rem;
+        width: 100%;
+        border-radius: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 1rem 1.25rem;
+        cursor: pointer;
+        border: 0;
+        box-shadow: var(--shadow);
+      }
+      .big-action strong { font-size: 1.45rem; }
+      .big-action span { margin-top: 0.35rem; font-size: 0.95rem; }
+      .big-action.primary { background: var(--ink-900); color: white; }
+      .big-action.secondary { background: white; color: var(--ink-900); border: 1px solid var(--slate-200); }
+
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
+        backdrop-filter: blur(10px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        z-index: 50;
+      }
+      .modal { width: 100%; max-width: 44rem; overflow: hidden; }
+      .modal-header, .modal-footer { padding: 1.1rem 1.25rem; }
+      .modal-header { border-bottom: 1px solid var(--slate-200); display: flex; justify-content: space-between; gap: 1rem; }
+      .modal-body { padding: 1.25rem; }
+      .modal-footer { border-top: 1px solid var(--slate-200); display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+      .hidden { display: none !important; }
+
+      .skeleton-layout { min-height: 100vh; width: 100%; display: grid; grid-template-columns: 18rem 1fr; gap: 1rem; padding: 1rem; }
+      .skeleton-col { border-radius: 1.5rem; background: rgba(255,255,255,0.65); border: 1px solid rgba(148,163,184,0.24); box-shadow: var(--shadow); padding: 1.25rem; }
+
+      @media (min-width: 1024px) {
+        .sidebar { display: flex; }
+        .content { padding: 2rem; margin-left: 18rem; }
+        .alerts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .grid-2 { grid-template-columns: 1.35fr 0.9fr; }
+        .wizard-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .dashboard { gap: 1.25rem; }
+      }
+      @media (max-width: 1023px) {
+        .layout { grid-template-columns: 1fr; }
+        .skeleton-layout { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <script>
+      const app = document.getElementById('app');
+
+      function getRoute() {
+        return (location.hash || '#landlord').replace(/^#/, '');
+      }
+
+      function go(route) {
+        location.hash = `#${route}`;
+      }
+
+      function landlordView() {
+        return `
+          <div class="shell layout">
+            <aside class="sidebar">
+              <div>
+                <p class="eyebrow">Automated Property Manager</p>
+                <h1 style="margin-top:0.75rem;font-size:1.8rem;">Landlord Dashboard</h1>
+                <p class="subtle">Exception-based visibility for Australian property portfolios.</p>
+              </div>
+              <nav class="nav">
+                <a class="active" href="/">Dashboard</a>
+                <a href="#">Properties</a>
+                <a href="#">Tenants</a>
+                <a href="#">Maintenance</a>
+              </nav>
+              <div class="sidebar-footer">
+                <p class="eyebrow">Portfolio Health</p>
+                <p class="subtle" style="margin-top:0.6rem;">Quiet by default. Loud only when there is a compliance or maintenance exception.</p>
+              </div>
+            </aside>
+
+            <main class="content">
+              <div class="dashboard">
+                <div style="display:flex;justify-content:flex-end;gap:0.75rem;flex-wrap:wrap;">
+                  <button class="btn secondary" data-route="tenant/123">Open Tenant View</button>
+                  <button class="btn primary" data-action="open-wizard">Open Wizard</button>
+                </div>
+
+                <section class="banner">
+                  <p class="eyebrow">System Status</p>
+                  <h2 class="title">System Status: Everything is on track</h2>
+                  <p class="subtle">No active incidents require your attention. The dashboard stays quiet until a tenant, SLA, or payment exception needs intervention.</p>
+                </section>
+
+                <section class="alerts">
+                  <article class="alert red" data-alert="burst-water-pipe">
+                    <p class="eyebrow" style="color:inherit;">Critical exception</p>
+                    <h4>Urgent: Burst Water Pipe at 123 Smith St</h4>
+                    <p>SLA: 14 hours remaining</p>
+                    <div class="button-row">
+                      <button class="btn primary" data-action="review" data-alert="burst-water-pipe">Review</button>
+                      <button class="btn ghost" data-action="snooze" data-alert="burst-water-pipe">Snooze</button>
+                    </div>
+                  </article>
+                  <article class="alert amber" data-alert="rent-overdue">
+                    <p class="eyebrow" style="color:inherit;">Attention required</p>
+                    <h4>Rent Overdue: John Doe</h4>
+                    <p>3 days late</p>
+                    <div class="button-row">
+                      <button class="btn secondary" data-action="review" data-alert="rent-overdue">Review</button>
+                      <button class="btn ghost" data-action="snooze" data-alert="rent-overdue">Snooze</button>
+                    </div>
+                  </article>
+                </section>
+
+                <section class="grid-2" id="wizard-section">
+                  <div class="card panel">
+                    <div style="display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;flex-wrap:wrap;">
+                      <div>
+                        <p class="eyebrow">Property Setup Wizard</p>
+                        <h3 class="title" style="font-size:1.8rem;margin-top:0.35rem;">Add a property without a heavy form</h3>
+                        <p class="subtle">Use a guided, step-by-step flow to collect only the essentials.</p>
+                      </div>
+                      <button class="btn primary" id="openWizard">Open Wizard</button>
+                    </div>
+                    <div class="steps" id="steps"></div>
+                    <div class="wizard-grid">
+                      <div class="field-box">
+                        <label>Step 1: Address</label>
+                        <div class="subtle" style="margin:0;">Collect the property address and state.</div>
+                      </div>
+                      <div class="field-box">
+                        <label>Preview</label>
+                        <div class="subtle" style="margin:0;">The wizard stays focused on the current step, keeping the rest hidden until needed.</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="card panel">
+                    <p class="eyebrow">What stays hidden</p>
+                    <h3 class="title" style="font-size:1.8rem;margin-top:0.35rem;">No full property list on the landing page</h3>
+                    <p class="subtle">The dashboard intentionally shows only the exceptions that demand action. This keeps the experience calm and aligned with the automation-first philosophy.</p>
+                    <div class="muted-card" style="margin-top:1rem;">
+                      <div class="skeleton" style="height:0.75rem;width:70%;margin-bottom:0.75rem;"></div>
+                      <div class="skeleton" style="height:0.75rem;width:50%;margin-bottom:0.75rem;"></div>
+                      <div class="skeleton" style="height:0.75rem;width:85%;"></div>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </main>
+
+            <div class="modal-backdrop" id="wizardBackdrop" aria-hidden="true">
+              <div class="modal">
+                <div class="modal-header">
+                  <div>
+                    <p class="eyebrow" id="wizardStepLabel">Step 1 of 3</p>
+                    <h2 style="margin-top:0.35rem;font-size:1.4rem;">Property address</h2>
+                  </div>
+                  <button class="btn ghost" id="closeWizard">Close</button>
+                </div>
+                <div class="modal-body" id="wizardBody"></div>
+                <div class="modal-footer">
+                  <div><button class="btn secondary" id="backWizard">Back</button></div>
+                  <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+                    <button class="btn secondary" id="nextWizard">Next</button>
+                    <button class="btn primary hidden" id="submitWizard">Finish</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>`;
+      }
+
+      function tenantView() {
+        const route = getRoute();
+        const propertyId = route.split('/')[1] || '123';
+        return `
+          <main class="tenant-wrap">
+              <div class="tenant-shell">
+              <section class="tenant-card" style="padding:1rem;">
+                <div class="tenant-hero">
+                  <p class="eyebrow" style="color:var(--sage-100);">Tenant Portal</p>
+                  <h1 style="margin-top:0.7rem;font-size:1.8rem;line-height:1.2;">Welcome, Alex Taylor</h1>
+                  <p class="address">123 Smith St, Surry Hills NSW 2010</p>
+                  <span class="badge">Property ID: ${propertyId}</span>
+                </div>
+              </section>
+
+              <div style="display:grid;gap:0.9rem;margin-top:1rem;">
+                <button class="big-action primary" data-action="pay-rent"><strong>Pay Rent</strong><span>$450 Due Next Tuesday</span></button>
+                <button class="big-action secondary" data-action="report-issue"><strong>Report an Issue</strong><span>Log a maintenance problem in under a minute.</span></button>
+              </div>
+
+              <section class="tenant-card" style="padding:1rem;margin-top:1rem;">
+                <p class="eyebrow">Maintenance Form</p>
+                <h2 class="title" style="font-size:1.3rem;margin-top:0.35rem;">Describe the issue</h2>
+                <p class="subtle">Keep it short. Add a photo if it helps the landlord or maintenance team understand the problem faster.</p>
+                <div style="display:grid;gap:0.9rem;margin-top:1rem;">
+                  <label class="field-box" style="padding:0; border:0;">
+                    <span style="display:block;font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;">Describe the issue...</span>
+                    <textarea placeholder="Describe the issue..." rows="5"></textarea>
+                  </label>
+                  <label style="display:flex;align-items:center;justify-content:center;border-radius:1rem;border:2px dashed var(--slate-200);background:var(--slate-50);padding:1rem;cursor:pointer;font-weight:700;color:var(--slate-600);">
+                    Take Photo/Upload
+                    <input type="file" accept="image/*" style="display:none;" />
+                  </label>
+                  <button class="btn primary" style="height:3.5rem;width:100%;border-radius:1rem;" data-action="submit-issue">Submit Issue</button>
+                </div>
+              </section>
+            </div>
+          </main>`;
+      }
+
+      function renderSteps(step) {
+        const labels = ['Address', 'Tenant Info', 'Rent Details'];
+        return labels.map((label, index) => `<span class="step-pill ${index === step ? 'active' : ''}">${index + 1}. ${label}</span>`).join('');
+      }
+
+      function renderWizardBody(step) {
+        if (step === 0) {
+          return `<div class="wizard-grid"><label class="field-box"><label>Street address</label><input placeholder="123 Smith St" /></label><label class="field-box"><label>State</label><input placeholder="NSW" /></label><label class="field-box"><label>Suburb</label><input placeholder="Surry Hills" /></label><label class="field-box"><label>Postcode</label><input placeholder="2010" /></label></div>`;
+        }
+        if (step === 1) {
+          return `<div class="wizard-grid"><label class="field-box"><label>Tenant name</label><input placeholder="John Doe" /></label><label class="field-box"><label>Tenant email</label><input placeholder="john@example.com" /></label><label class="field-box"><label>Move-in date</label><input placeholder="2026-07-15" /></label><label class="field-box"><label>Lease term</label><input placeholder="12 months" /></label></div>`;
+        }
+        return `<div class="wizard-grid"><label class="field-box"><label>Rent amount</label><input placeholder="$450.00" /></label><label class="field-box"><label>Frequency</label><input placeholder="Weekly" /></label><label class="field-box"><label>First due date</label><input placeholder="2026-07-11" /></label><label class="field-box"><label>Bond amount</label><input placeholder="$1,800.00" /></label></div>`;
+      }
+
+      function render() {
+        const route = getRoute();
+
+        if (route.startsWith('tenant')) {
+          app.innerHTML = tenantView();
+          bindActions();
+          return;
+        }
+
+        app.innerHTML = landlordView();
+        bindActions();
+
+        const backdrop = document.getElementById('wizardBackdrop');
+        const openBtn = document.getElementById('openWizard');
+        const closeBtn = document.getElementById('closeWizard');
+        const backBtn = document.getElementById('backWizard');
+        const nextBtn = document.getElementById('nextWizard');
+        const submitBtn = document.getElementById('submitWizard');
+        const body = document.getElementById('wizardBody');
+        const label = document.getElementById('wizardStepLabel');
+        let step = 0;
+
+        function syncWizard() {
+          label.textContent = `Step ${step + 1} of 3`;
+          body.innerHTML = renderWizardBody(step);
+          document.querySelectorAll('.step-pill').forEach((pill, index) => {
+            pill.classList.toggle('active', index === step);
+          });
+          backBtn.style.visibility = step === 0 ? 'hidden' : 'visible';
+          nextBtn.classList.toggle('hidden', step === 2);
+          submitBtn.classList.toggle('hidden', step !== 2);
+        }
+
+        openBtn.addEventListener('click', () => {
+          step = 0;
+          document.getElementById('steps').innerHTML = renderSteps(step);
+          syncWizard();
+          backdrop.style.display = 'flex';
+          backdrop.setAttribute('aria-hidden', 'false');
+        });
+        closeBtn.addEventListener('click', () => {
+          backdrop.style.display = 'none';
+          backdrop.setAttribute('aria-hidden', 'true');
+        });
+        backdrop.addEventListener('click', (event) => {
+          if (event.target === backdrop) {
+            backdrop.style.display = 'none';
+            backdrop.setAttribute('aria-hidden', 'true');
+          }
+        });
+        backBtn.addEventListener('click', () => {
+          if (step > 0) step -= 1;
+          syncWizard();
+        });
+        nextBtn.addEventListener('click', () => {
+          if (step < 2) step += 1;
+          syncWizard();
+        });
+        submitBtn.addEventListener('click', () => {
+          backdrop.style.display = 'none';
+          backdrop.setAttribute('aria-hidden', 'true');
+        });
+
+        document.getElementById('steps').innerHTML = renderSteps(step);
+        syncWizard();
+      }
+
+      function bindActions() {
+        document.querySelectorAll('[data-route]').forEach((element) => {
+          element.addEventListener('click', () => go(element.getAttribute('data-route')));
+        });
+
+        document.querySelectorAll('[data-action]').forEach((element) => {
+          element.addEventListener('click', () => {
+            const action = element.getAttribute('data-action');
+            if (action === 'open-wizard') {
+              document.getElementById('openWizard')?.click();
+              return;
+            }
+            if (action === 'pay-rent') {
+              alert('Rent payment flow opened.');
+              return;
+            }
+            if (action === 'report-issue') {
+              document.querySelector('textarea[placeholder="Describe the issue..."]')?.focus();
+              return;
+            }
+            if (action === 'submit-issue') {
+              alert('Maintenance issue submitted.');
+              return;
+            }
+            if (action === 'review') {
+              alert(`Reviewing ${element.getAttribute('data-alert')}.`);
+              return;
+            }
+            if (action === 'snooze') {
+              element.closest('[data-alert]')?.remove();
+            }
+          });
+        });
+      }
+
+      window.addEventListener('hashchange', render);
+      render();
+    </script>
+  </body>
+</html>
