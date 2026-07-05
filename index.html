@@ -322,35 +322,33 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <script>
-      document.body.style.background = '#ff4444';
+      var app = document.getElementById('app');
+      var toastContainer = document.getElementById('toastContainer');
 
-      const app = document.getElementById('app');
-      const toastContainer = document.getElementById('toastContainer');
-
-      function showToast(message, type = 'success') {
-        const el = document.createElement('div');
-        el.className = `toast ${type}`;
+      function showToast(message, type) {
+        if (type === undefined) type = 'success';
+        var el = document.createElement('div');
+        el.className = 'toast ' + type;
         el.textContent = message;
         toastContainer.appendChild(el);
-        setTimeout(() => {
+        setTimeout(function() {
           el.style.opacity = '0';
           el.style.transition = 'opacity 0.3s';
-          setTimeout(() => el.remove(), 300);
+          setTimeout(function() { el.remove(); }, 300);
         }, 3000);
       }
 
       function renderModal(title, bodyHtml, footerHtml) {
-        return `
-          <div class="modal-backdrop open" id="dynamicModal">
-            <div class="modal">
-              <div class="modal-header">
-                <h2 style="margin:0;font-size:1.25rem;">${title}</h2>
-                <button class="btn ghost" id="closeDynamicModal">Close</button>
-              </div>
-              <div class="modal-body">${bodyHtml}</div>
-              <div class="modal-footer">${footerHtml || ''}</div>
-            </div>
-          </div>`;
+        return '<div class="modal-backdrop open" id="dynamicModal">' +
+          '<div class="modal">' +
+          '<div class="modal-header">' +
+          '<h2 style="margin:0;font-size:1.25rem;">' + title + '</h2>' +
+          '<button class="btn ghost" id="closeDynamicModal">Close</button>' +
+          '</div>' +
+          '<div class="modal-body">' + bodyHtml + '</div>' +
+          '<div class="modal-footer">' + (footerHtml || '') + '</div>' +
+          '</div>' +
+          '</div>';
       }
 
       function getRoute() {
@@ -358,264 +356,252 @@
       }
 
       function go(route) {
-        location.hash = `#${route}`;
+        location.hash = '#' + route;
       }
 
       function landlordView() {
-        return `
-          <div class="shell layout">
-            <aside class="sidebar">
-              <div>
-                <p class="eyebrow">Automated Property Manager</p>
-                <h1 style="margin-top:0.75rem;font-size:1.8rem;">Landlord Dashboard</h1>
-                <p class="subtle">Exception-based visibility for Australian property portfolios.</p>
-              </div>
-              <nav class="nav">
-                <button class="active" data-route="landlord">Dashboard</button>
-                <button data-route="properties">Properties</button>
-                <button data-route="tenant/123">Tenants</button>
-                <button data-route="landlord#maintenance">Maintenance</button>
-              </nav>
-              <div class="sidebar-footer">
-                <p class="eyebrow">Portfolio Health</p>
-                <p class="subtle" style="margin-top:0.6rem;">Quiet by default. Loud only when there is a compliance or maintenance exception.</p>
-              </div>
-            </aside>
-
-            <main class="content">
-              <div class="dashboard">
-                <div style="display:flex;justify-content:flex-end;gap:0.75rem;flex-wrap:wrap;">
-                  <button class="btn secondary" data-route="properties">Open Properties</button>
-                  <button class="btn secondary" data-route="tenant/123">Open Tenant View</button>
-                  <button class="btn primary" data-action="open-wizard">Open Wizard</button>
-                </div>
-
-                <section class="banner">
-                  <p class="eyebrow">System Status</p>
-                  <h2 class="title">System Status: Everything is on track</h2>
-                  <p class="subtle">No active incidents require your attention. The dashboard stays quiet until a tenant, SLA, or payment exception needs intervention.</p>
-                </section>
-
-                <section class="alerts">
-                  <article class="alert red" data-alert="burst-water-pipe">
-                    <p class="eyebrow" style="color:inherit;">Critical exception</p>
-                    <h4>Urgent: Burst Water Pipe at 123 Smith St</h4>
-                    <p>SLA: 14 hours remaining</p>
-                    <div class="button-row">
-                      <button class="btn primary" data-action="review" data-alert="burst-water-pipe">Review</button>
-                      <button class="btn ghost" data-action="snooze" data-alert="burst-water-pipe">Snooze</button>
-                    </div>
-                  </article>
-                  <article class="alert amber" data-alert="rent-overdue">
-                    <p class="eyebrow" style="color:inherit;">Attention required</p>
-                    <h4>Rent Overdue: John Doe</h4>
-                    <p>3 days late</p>
-                    <div class="button-row">
-                      <button class="btn secondary" data-action="review" data-alert="rent-overdue">Review</button>
-                      <button class="btn ghost" data-action="snooze" data-alert="rent-overdue">Snooze</button>
-                    </div>
-                  </article>
-                </section>
-
-                <section class="grid-2" id="wizard-section">
-                  <div class="card panel">
-                    <div style="display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;flex-wrap:wrap;">
-                      <div>
-                        <p class="eyebrow">Property Setup Wizard</p>
-                        <h3 class="title" style="font-size:1.8rem;margin-top:0.35rem;">Add a property without a heavy form</h3>
-                        <p class="subtle">Use a guided, step-by-step flow to collect only the essentials.</p>
-                      </div>
-                      <button class="btn primary" id="openWizard">Open Wizard</button>
-                    </div>
-                    <div class="steps" id="steps"></div>
-                    <div class="wizard-grid">
-                      <div class="field-box">
-                        <label>Step 1: Address</label>
-                        <div class="subtle" style="margin:0;">Collect the property address and state.</div>
-                      </div>
-                      <div class="field-box">
-                        <label>Preview</label>
-                        <div class="subtle" style="margin:0;">The wizard stays focused on the current step, keeping the rest hidden until needed.</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="card panel">
-                    <p class="eyebrow">What stays hidden</p>
-                    <h3 class="title" style="font-size:1.8rem;margin-top:0.35rem;">No full property list on the landing page</h3>
-                    <p class="subtle">The dashboard intentionally shows only the exceptions that demand action. This keeps the experience calm and aligned with the automation-first philosophy.</p>
-                    <div class="muted-card" style="margin-top:1rem;">
-                      <div class="skeleton" style="height:0.75rem;width:70%;margin-bottom:0.75rem;"></div>
-                      <div class="skeleton" style="height:0.75rem;width:50%;margin-bottom:0.75rem;"></div>
-                      <div class="skeleton" style="height:0.75rem;width:85%;"></div>
-                    </div>
-                  </div>
-                </section>
-              </div>
-            </main>
-
-            <div class="modal-backdrop" id="wizardBackdrop" aria-hidden="true">
-              <div class="modal">
-                <div class="modal-header">
-                  <h2 style="margin:0;font-size:1.25rem;">Property Setup Wizard</h2>
-                  <button class="btn ghost" id="closeWizard">Close</button>
-                </div>
-                <div class="modal-body">
-                  <p id="wizardStepLabel" style="font-size:0.9rem;font-weight:600;color:var(--slate-600);margin-bottom:1rem;">Step 1 of 3</p>
-                  <div id="wizardBody"></div>
-                </div>
-                <div class="modal-footer">
-                  <button class="btn secondary" id="backWizard" style="visibility:hidden;">Back</button>
-                  <button class="btn primary" id="nextWizard">Next</button>
-                  <button class="btn primary hidden" id="submitWizard">Submit</button>
-                </div>
-              </div>
-            </div>
-          </div>`;
+        return '<div class="shell layout">' +
+          '<aside class="sidebar">' +
+          '<div>' +
+          '<p class="eyebrow">Automated Property Manager</p>' +
+          '<h1 style="margin-top:0.75rem;font-size:1.8rem;">Landlord Dashboard</h1>' +
+          '<p class="subtle">Exception-based visibility for Australian property portfolios.</p>' +
+          '</div>' +
+          '<nav class="nav">' +
+          '<button class="active" data-route="landlord">Dashboard</button>' +
+          '<button data-route="properties">Properties</button>' +
+          '<button data-route="tenant/123">Tenants</button>' +
+          '<button data-route="landlord#maintenance">Maintenance</button>' +
+          '</nav>' +
+          '<div class="sidebar-footer">' +
+          '<p class="eyebrow">Portfolio Health</p>' +
+          '<p class="subtle" style="margin-top:0.6rem;">Quiet by default. Loud only when there is a compliance or maintenance exception.</p>' +
+          '</div>' +
+          '</aside>' +
+          '<main class="content">' +
+          '<div class="dashboard">' +
+          '<div style="display:flex;justify-content:flex-end;gap:0.75rem;flex-wrap:wrap;">' +
+          '<button class="btn secondary" data-route="properties">Open Properties</button>' +
+          '<button class="btn secondary" data-route="tenant/123">Open Tenant View</button>' +
+          '<button class="btn primary" data-action="open-wizard">Open Wizard</button>' +
+          '</div>' +
+          '<section class="banner">' +
+          '<p class="eyebrow">System Status</p>' +
+          '<h2 class="title">System Status: Everything is on track</h2>' +
+          '<p class="subtle">No active incidents require your attention. The dashboard stays quiet until a tenant, SLA, or payment exception needs intervention.</p>' +
+          '</section>' +
+          '<section class="alerts">' +
+          '<article class="alert red" data-alert="burst-water-pipe">' +
+          '<p class="eyebrow" style="color:inherit;">Critical exception</p>' +
+          '<h4>Urgent: Burst Water Pipe at 123 Smith St</h4>' +
+          '<p>SLA: 14 hours remaining</p>' +
+          '<div class="button-row">' +
+          '<button class="btn primary" data-action="review" data-alert="burst-water-pipe">Review</button>' +
+          '<button class="btn ghost" data-action="snooze" data-alert="burst-water-pipe">Snooze</button>' +
+          '</div>' +
+          '</article>' +
+          '<article class="alert amber" data-alert="rent-overdue">' +
+          '<p class="eyebrow" style="color:inherit;">Attention required</p>' +
+          '<h4>Rent Overdue: John Doe</h4>' +
+          '<p>3 days late</p>' +
+          '<div class="button-row">' +
+          '<button class="btn secondary" data-action="review" data-alert="rent-overdue">Review</button>' +
+          '<button class="btn ghost" data-action="snooze" data-alert="rent-overdue">Snooze</button>' +
+          '</div>' +
+          '</article>' +
+          '</section>' +
+          '<section class="grid-2" id="wizard-section">' +
+          '<div class="card panel">' +
+          '<div style="display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;flex-wrap:wrap;">' +
+          '<div>' +
+          '<p class="eyebrow">Property Setup Wizard</p>' +
+          '<h3 class="title" style="font-size:1.8rem;margin-top:0.35rem;">Add a property without a heavy form</h3>' +
+          '<p class="subtle">Use a guided, step-by-step flow to collect only the essentials.</p>' +
+          '</div>' +
+          '<button class="btn primary" id="openWizard">Open Wizard</button>' +
+          '</div>' +
+          '<div class="steps" id="steps"></div>' +
+          '<div class="wizard-grid">' +
+          '<div class="field-box">' +
+          '<label>Step 1: Address</label>' +
+          '<div class="subtle" style="margin:0;">Collect the property address and state.</div>' +
+          '</div>' +
+          '<div class="field-box">' +
+          '<label>Preview</label>' +
+          '<div class="subtle" style="margin:0;">The wizard stays focused on the current step, keeping the rest hidden until needed.</div>' +
+          '</div>' +
+          '</div>' +
+          '</div>' +
+          '<div class="card panel">' +
+          '<p class="eyebrow">What stays hidden</p>' +
+          '<h3 class="title" style="font-size:1.8rem;margin-top:0.35rem;">No full property list on the landing page</h3>' +
+          '<p class="subtle">The dashboard intentionally shows only the exceptions that demand action. This keeps the experience calm and aligned with the automation-first philosophy.</p>' +
+          '<div class="muted-card" style="margin-top:1rem;">' +
+          '<div class="skeleton" style="height:0.75rem;width:70%;margin-bottom:0.75rem;"></div>' +
+          '<div class="skeleton" style="height:0.75rem;width:50%;margin-bottom:0.75rem;"></div>' +
+          '<div class="skeleton" style="height:0.75rem;width:85%;"></div>' +
+          '</div>' +
+          '</div>' +
+          '</section>' +
+          '</div>' +
+          '</main>' +
+          '<div class="modal-backdrop" id="wizardBackdrop" aria-hidden="true">' +
+          '<div class="modal">' +
+          '<div class="modal-header">' +
+          '<h2 style="margin:0;font-size:1.25rem;">Property Setup Wizard</h2>' +
+          '<button class="btn ghost" id="closeWizard">Close</button>' +
+          '</div>' +
+          '<div class="modal-body">' +
+          '<p id="wizardStepLabel" style="font-size:0.9rem;font-weight:600;color:var(--slate-600);margin-bottom:1rem;">Step 1 of 3</p>' +
+          '<div id="wizardBody"></div>' +
+          '</div>' +
+          '<div class="modal-footer">' +
+          '<button class="btn secondary" id="backWizard" style="visibility:hidden;">Back</button>' +
+          '<button class="btn primary" id="nextWizard">Next</button>' +
+          '<button class="btn primary hidden" id="submitWizard">Submit</button>' +
+          '</div>' +
+          '</div>' +
+          '</div>' +
+          '</div>';
       }
 
       function propertiesView() {
-        return `
-          <div class="shell layout">
-            <aside class="sidebar">
-              <div>
-                <p class="eyebrow">Automated Property Manager</p>
-                <h1 style="margin-top:0.75rem;font-size:1.8rem;">Properties</h1>
-                <p class="subtle">A full-width portfolio view for desktop screens.</p>
-              </div>
-              <nav class="nav">
-                <button data-route="landlord">Dashboard</button>
-                <button class="active" data-route="properties">Properties</button>
-                <button data-route="tenant/123">Tenants</button>
-                <button data-route="landlord#maintenance">Maintenance</button>
-              </nav>
-              <div class="sidebar-footer">
-                <p class="eyebrow">Portfolio Health</p>
-                <p class="subtle" style="margin-top:0.6rem;">This view is intentionally wide and desktop-first.</p>
-              </div>
-            </aside>
-
-            <main class="content">
-              <div class="dashboard" style="max-width:none;">
-                <div style="display:flex;justify-content:space-between;gap:0.75rem;flex-wrap:wrap;align-items:center;">
-                  <div>
-                    <p class="eyebrow">Portfolio</p>
-                    <h2 class="title" style="font-size:2rem;">Properties</h2>
-                    <p class="subtle">A desktop view for scanning the portfolio without the narrow mobile treatment.</p>
-                  </div>
-                  <button class="btn primary" data-route="landlord">Back to Dashboard</button>
-                </div>
-
-                <section class="properties-grid">
-                  <article class="property-card">
-                    <p class="eyebrow">Occupied</p>
-                    <h3 class="title" style="font-size:1.25rem;">123 Smith St</h3>
-                    <p class="subtle">John Doe - Rent paid this cycle.</p>
-                  </article>
-                  <article class="property-card">
-                    <p class="eyebrow">Exception</p>
-                    <h3 class="title" style="font-size:1.25rem;">88 George Rd</h3>
-                    <p class="subtle">Burst pipe alert under SLA tracking.</p>
-                  </article>
-                  <article class="property-card">
-                    <p class="eyebrow">Preparing</p>
-                    <h3 class="title" style="font-size:1.25rem;">4 Bay View Ave</h3>
-                    <p class="subtle">Turnover scheduled for new tenancy.</p>
-                  </article>
-                </section>
-
-                <section class="card panel">
-                  <p class="eyebrow">Property Details</p>
-                  <h3 class="title" style="font-size:1.8rem;margin-top:0.35rem;">Select a property to inspect notes, rent, and maintenance</h3>
-                  <p class="subtle">This section fills the available screen width on desktop instead of collapsing into a narrow phone-sized column.</p>
-                </section>
-              </div>
-            </main>
-          </div>`;
+        return '<div class="shell layout">' +
+          '<aside class="sidebar">' +
+          '<div>' +
+          '<p class="eyebrow">Automated Property Manager</p>' +
+          '<h1 style="margin-top:0.75rem;font-size:1.8rem;">Properties</h1>' +
+          '<p class="subtle">A full-width portfolio view for desktop screens.</p>' +
+          '</div>' +
+          '<nav class="nav">' +
+          '<button data-route="landlord">Dashboard</button>' +
+          '<button class="active" data-route="properties">Properties</button>' +
+          '<button data-route="tenant/123">Tenants</button>' +
+          '<button data-route="landlord#maintenance">Maintenance</button>' +
+          '</nav>' +
+          '<div class="sidebar-footer">' +
+          '<p class="eyebrow">Portfolio Health</p>' +
+          '<p class="subtle" style="margin-top:0.6rem;">This view is intentionally wide and desktop-first.</p>' +
+          '</div>' +
+          '</aside>' +
+          '<main class="content">' +
+          '<div class="dashboard" style="max-width:none;">' +
+          '<div style="display:flex;justify-content:space-between;gap:0.75rem;flex-wrap:wrap;align-items:center;">' +
+          '<div>' +
+          '<p class="eyebrow">Portfolio</p>' +
+          '<h2 class="title" style="font-size:2rem;">Properties</h2>' +
+          '<p class="subtle">A desktop view for scanning the portfolio without the narrow mobile treatment.</p>' +
+          '</div>' +
+          '<button class="btn primary" data-route="landlord">Back to Dashboard</button>' +
+          '</div>' +
+          '<section class="properties-grid">' +
+          '<article class="property-card">' +
+          '<p class="eyebrow">Occupied</p>' +
+          '<h3 class="title" style="font-size:1.25rem;">123 Smith St</h3>' +
+          '<p class="subtle">John Doe - Rent paid this cycle.</p>' +
+          '</article>' +
+          '<article class="property-card">' +
+          '<p class="eyebrow">Exception</p>' +
+          '<h3 class="title" style="font-size:1.25rem;">88 George Rd</h3>' +
+          '<p class="subtle">Burst pipe alert under SLA tracking.</p>' +
+          '</article>' +
+          '<article class="property-card">' +
+          '<p class="eyebrow">Preparing</p>' +
+          '<h3 class="title" style="font-size:1.25rem;">4 Bay View Ave</h3>' +
+          '<p class="subtle">Turnover scheduled for new tenancy.</p>' +
+          '</article>' +
+          '</section>' +
+          '<section class="card panel">' +
+          '<p class="eyebrow">Property Details</p>' +
+          '<h3 class="title" style="font-size:1.8rem;margin-top:0.35rem;">Select a property to inspect notes, rent, and maintenance</h3>' +
+          '<p class="subtle">This section fills the available screen width on desktop instead of collapsing into a narrow phone-sized column.</p>' +
+          '</section>' +
+          '</div>' +
+          '</main>' +
+          '</div>';
       }
 
       function tenantView() {
-        const route = getRoute();
-        const propertyId = route.split('/')[1] || '123';
-        return `
-          <main class="tenant-wrap">
-              <div class="tenant-shell">
-              <section class="tenant-card" style="padding:1rem;">
-                <div class="tenant-hero">
-                  <p class="eyebrow" style="color:var(--sage-100);">Tenant Portal</p>
-                  <h1 style="margin-top:0.7rem;font-size:1.8rem;line-height:1.2;">Welcome, Alex Taylor</h1>
-                  <p class="address">123 Smith St, Surry Hills NSW 2010</p>
-                  <span class="badge">Property ID: ${propertyId}</span>
-                </div>
-              </section>
-
-              <div style="display:grid;gap:0.9rem;margin-top:1rem;">
-                <button class="big-action primary" data-action="pay-rent"><strong>Pay Rent</strong><span>$450 Due Next Tuesday</span></button>
-                <button class="big-action secondary" data-action="report-issue"><strong>Report an Issue</strong><span>Log a maintenance problem in under a minute.</span></button>
-              </div>
-
-              <section class="tenant-card" style="padding:1rem;margin-top:1rem;">
-                <p class="eyebrow">Maintenance Form</p>
-                <h2 class="title" style="font-size:1.3rem;margin-top:0.35rem;">Describe the issue</h2>
-                <p class="subtle">Keep it short. Add a photo if it helps the landlord or maintenance team understand the problem faster.</p>
-                <div style="display:grid;gap:0.9rem;margin-top:1rem;">
-                  <label class="field-box" style="padding:0; border:0;">
-                    <span style="display:block;font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;">Describe the issue...</span>
-                    <textarea placeholder="Describe the issue..." rows="5" id="issueTextarea"></textarea>
-                  </label>
-                  <label style="display:flex;align-items:center;justify-content:center;border-radius:1rem;border:2px dashed var(--slate-200);background:var(--slate-50);padding:1rem;cursor:pointer;font-weight:700;color:var(--slate-600);">
-                    Take Photo/Upload
-                    <input type="file" accept="image/*" style="display:none;" id="photoUpload" />
-                  </label>
-                  <button class="btn primary" style="height:3.5rem;width:100%;border-radius:1rem;" data-action="submit-issue">Submit Issue</button>
-                </div>
-              </section>
-            </div>
-          </main>`;
+        var route = getRoute();
+        var propertyId = route.split('/')[1] || '123';
+        return '<main class="tenant-wrap">' +
+          '<div class="tenant-shell">' +
+          '<section class="tenant-card" style="padding:1rem;">' +
+          '<div class="tenant-hero">' +
+          '<p class="eyebrow" style="color:var(--sage-100);">Tenant Portal</p>' +
+          '<h1 style="margin-top:0.7rem;font-size:1.8rem;line-height:1.2;">Welcome, Alex Taylor</h1>' +
+          '<p class="address">123 Smith St, Surry Hills NSW 2010</p>' +
+          '<span class="badge">Property ID: ' + propertyId + '</span>' +
+          '</div>' +
+          '</section>' +
+          '<div style="display:grid;gap:0.9rem;margin-top:1rem;">' +
+          '<button class="big-action primary" data-action="pay-rent"><strong>Pay Rent</strong><span>$450 Due Next Tuesday</span></button>' +
+          '<button class="big-action secondary" data-action="report-issue"><strong>Report an Issue</strong><span>Log a maintenance problem in under a minute.</span></button>' +
+          '</div>' +
+          '<section class="tenant-card" style="padding:1rem;margin-top:1rem;">' +
+          '<p class="eyebrow">Maintenance Form</p>' +
+          '<h2 class="title" style="font-size:1.3rem;margin-top:0.35rem;">Describe the issue</h2>' +
+          '<p class="subtle">Keep it short. Add a photo if it helps the landlord or maintenance team understand the problem faster.</p>' +
+          '<div style="display:grid;gap:0.9rem;margin-top:1rem;">' +
+          '<label class="field-box" style="padding:0; border:0;">' +
+          '<span style="display:block;font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;">Describe the issue...</span>' +
+          '<textarea placeholder="Describe the issue..." rows="5" id="issueTextarea"></textarea>' +
+          '</label>' +
+          '<label style="display:flex;align-items:center;justify-content:center;border-radius:1rem;border:2px dashed var(--slate-200);background:var(--slate-50);padding:1rem;cursor:pointer;font-weight:700;color:var(--slate-600);">' +
+          'Take Photo/Upload' +
+          '<input type="file" accept="image/*" style="display:none;" id="photoUpload" />' +
+          '</label>' +
+          '<button class="btn primary" style="height:3.5rem;width:100%;border-radius:1rem;" data-action="submit-issue">Submit Issue</button>' +
+          '</div>' +
+          '</section>' +
+          '</div>' +
+          '</main>';
       }
 
       function renderSteps(step) {
-        const labels = ['Address', 'Tenant Info', 'Rent Details'];
-        return labels.map((label, index) => `<span class="step-pill ${index === step ? 'active' : ''}">${index + 1}. ${label}</span>`).join('');
+        var labels = ['Address', 'Tenant Info', 'Rent Details'];
+        return labels.map(function(label, index) {
+          return '<span class="step-pill ' + (index === step ? 'active' : '') + '">' + (index + 1) + '. ' + label + '</span>';
+        }).join('');
       }
 
       function renderWizardBody(step) {
         if (step === 0) {
-          return `<div class="wizard-grid"><label class="field-box"><label>Street address</label><input placeholder="123 Smith St" id="wiz-address" /></label><label class="field-box"><label>State</label><input placeholder="NSW" id="wiz-state" /></label><label class="field-box"><label>Suburb</label><input placeholder="Surry Hills" id="wiz-suburb" /></label><label class="field-box"><label>Postcode</label><input placeholder="2010" id="wiz-postcode" /></label></div>`;
+          return '<div class="wizard-grid"><label class="field-box"><label>Street address</label><input placeholder="123 Smith St" id="wiz-address" /></label><label class="field-box"><label>State</label><input placeholder="NSW" id="wiz-state" /></label><label class="field-box"><label>Suburb</label><input placeholder="Surry Hills" id="wiz-suburb" /></label><label class="field-box"><label>Postcode</label><input placeholder="2010" id="wiz-postcode" /></label></div>';
         }
         if (step === 1) {
-          return `<div class="wizard-grid"><label class="field-box"><label>Tenant name</label><input placeholder="John Doe" id="wiz-name" /></label><label class="field-box"><label>Tenant email</label><input placeholder="john@example.com" id="wiz-email" /></label><label class="field-box"><label>Move-in date</label><input placeholder="2026-07-15" id="wiz-movein" /></label><label class="field-box"><label>Lease term</label><input placeholder="12 months" id="wiz-term" /></label></div>`;
+          return '<div class="wizard-grid"><label class="field-box"><label>Tenant name</label><input placeholder="John Doe" id="wiz-name" /></label><label class="field-box"><label>Tenant email</label><input placeholder="john@example.com" id="wiz-email" /></label><label class="field-box"><label>Move-in date</label><input placeholder="2026-07-15" id="wiz-movein" /></label><label class="field-box"><label>Lease term</label><input placeholder="12 months" id="wiz-term" /></label></div>';
         }
-        return `<div class="wizard-grid"><label class="field-box"><label>Rent amount</label><input placeholder="$450.00" id="wiz-rent" /></label><label class="field-box"><label>Frequency</label><input placeholder="Weekly" id="wiz-frequency" /></label><label class="field-box"><label>First due date</label><input placeholder="2026-07-11" id="wiz-due" /></label><label class="field-box"><label>Bond amount</label><input placeholder="$1,800.00" id="wiz-bond" /></label></div>`;
+        return '<div class="wizard-grid"><label class="field-box"><label>Rent amount</label><input placeholder="$450.00" id="wiz-rent" /></label><label class="field-box"><label>Frequency</label><input placeholder="Weekly" id="wiz-frequency" /></label><label class="field-box"><label>First due date</label><input placeholder="2026-07-11" id="wiz-due" /></label><label class="field-box"><label>Bond amount</label><input placeholder="$1,800.00" id="wiz-bond" /></label></div>';
       }
 
       function openModal(title, bodyHtml, footerHtml) {
-        const existing = document.getElementById('dynamicModal');
+        var existing = document.getElementById('dynamicModal');
         if (existing) existing.remove();
-        const wrapper = document.createElement('div');
+        var wrapper = document.createElement('div');
         wrapper.innerHTML = renderModal(title, bodyHtml, footerHtml);
         document.body.appendChild(wrapper.firstElementChild);
         document.getElementById('closeDynamicModal').addEventListener('click', closeDynamicModal);
-        document.getElementById('dynamicModal').addEventListener('click', (e) => {
+        document.getElementById('dynamicModal').addEventListener('click', function(e) {
           if (e.target === e.currentTarget) closeDynamicModal();
         });
       }
 
       function closeDynamicModal() {
-        const el = document.getElementById('dynamicModal');
+        var el = document.getElementById('dynamicModal');
         if (el) el.remove();
       }
 
       function render() {
-        const route = getRoute();
+        var route = getRoute();
 
-        if (route.startsWith('properties')) {
+        if (route.indexOf('properties') === 0) {
           app.innerHTML = propertiesView();
           bindActions();
           return;
         }
 
-        if (route.startsWith('tenant')) {
+        if (route.indexOf('tenant') === 0) {
           app.innerHTML = tenantView();
           bindActions();
           return;
@@ -624,53 +610,66 @@
         app.innerHTML = landlordView();
         bindActions();
 
-        const backdrop = document.getElementById('wizardBackdrop');
-        const openBtn = document.getElementById('openWizard');
-        const closeBtn = document.getElementById('closeWizard');
-        const backBtn = document.getElementById('backWizard');
-        const nextBtn = document.getElementById('nextWizard');
-        const submitBtn = document.getElementById('submitWizard');
-        const body = document.getElementById('wizardBody');
-        const label = document.getElementById('wizardStepLabel');
-        let step = 0;
+        var backdrop = document.getElementById('wizardBackdrop');
+        var openBtn = document.getElementById('openWizard');
+        var closeBtn = document.getElementById('closeWizard');
+        var backBtn = document.getElementById('backWizard');
+        var nextBtn = document.getElementById('nextWizard');
+        var submitBtn = document.getElementById('submitWizard');
+        var body = document.getElementById('wizardBody');
+        var label = document.getElementById('wizardStepLabel');
+        var step = 0;
 
         function syncWizard() {
-          label.textContent = `Step ${step + 1} of 3`;
+          label.textContent = 'Step ' + (step + 1) + ' of 3';
           body.innerHTML = renderWizardBody(step);
-          document.querySelectorAll('.step-pill').forEach((pill, index) => {
-            pill.classList.toggle('active', index === step);
-          });
+          var pills = document.querySelectorAll('.step-pill');
+          for (var i = 0; i < pills.length; i++) {
+            if (i === step) {
+              pills[i].classList.add('active');
+            } else {
+              pills[i].classList.remove('active');
+            }
+          }
           backBtn.style.visibility = step === 0 ? 'hidden' : 'visible';
-          nextBtn.classList.toggle('hidden', step === 2);
-          submitBtn.classList.toggle('hidden', step !== 2);
+          if (step === 2) {
+            nextBtn.classList.add('hidden');
+          } else {
+            nextBtn.classList.remove('hidden');
+          }
+          if (step !== 2) {
+            submitBtn.classList.add('hidden');
+          } else {
+            submitBtn.classList.remove('hidden');
+          }
         }
 
-        openBtn.addEventListener('click', () => {
+        openBtn.addEventListener('click', function() {
           step = 0;
           document.getElementById('steps').innerHTML = renderSteps(step);
           syncWizard();
           backdrop.style.display = 'flex';
           backdrop.setAttribute('aria-hidden', 'false');
         });
-        closeBtn.addEventListener('click', () => {
+        closeBtn.addEventListener('click', function() {
           backdrop.style.display = 'none';
           backdrop.setAttribute('aria-hidden', 'true');
         });
-        backdrop.addEventListener('click', (event) => {
+        backdrop.addEventListener('click', function(event) {
           if (event.target === backdrop) {
             backdrop.style.display = 'none';
             backdrop.setAttribute('aria-hidden', 'true');
           }
         });
-        backBtn.addEventListener('click', () => {
+        backBtn.addEventListener('click', function() {
           if (step > 0) step -= 1;
           syncWizard();
         });
-        nextBtn.addEventListener('click', () => {
+        nextBtn.addEventListener('click', function() {
           if (step < 2) step += 1;
           syncWizard();
         });
-        submitBtn.addEventListener('click', () => {
+        submitBtn.addEventListener('click', function() {
           backdrop.style.display = 'none';
           backdrop.setAttribute('aria-hidden', 'true');
           showToast('Property and tenancy created successfully!');
@@ -681,96 +680,114 @@
       }
 
       function bindActions() {
-        document.querySelectorAll('[data-route]').forEach((element) => {
-          element.addEventListener('click', () => go(element.getAttribute('data-route')));
-        });
+        var routeLinks = document.querySelectorAll('[data-route]');
+        for (var i = 0; i < routeLinks.length; i++) {
+          routeLinks[i].addEventListener('click', (function(route) {
+            return function() { go(route); };
+          })(routeLinks[i].getAttribute('data-route')));
+        }
 
-        document.querySelectorAll('[data-action]').forEach((element) => {
-          element.addEventListener('click', () => {
-            const action = element.getAttribute('data-action');
-            if (action === 'open-wizard') {
-              document.getElementById('openWizard')?.click();
-              return;
-            }
-            if (action === 'pay-rent') {
-              openModal(
-                'Pay Rent',
-                `<div style="display:grid;gap:1.25rem;">
-                  <div style="text-align:center;padding:1rem 0;">
-                    <p style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.2em;font-weight:600;color:var(--sage-700);margin:0;">Amount Due</p>
-                    <p style="font-size:2.5rem;font-weight:700;margin:0.5rem 0 0;">$450.00</p>
-                    <p style="color:var(--slate-500);margin:0.25rem 0 0;">Due Tuesday, July 7</p>
-                  </div>
-                  <label class="field-box" style="padding:0;border:0;">
-                    <span style="display:block;font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;">Payment method</span>
-                    <select style="width:100%;border:1px solid var(--slate-200);border-radius:0.8rem;padding:0.8rem 0.9rem;outline:none;background:white;">
-                      <option>Visa ending in 4242</option>
-                      <option>Bank transfer</option>
-                    </select>
-                  </label>
-                </div>`,
-                `<button class="btn primary" id="confirmPayment">Pay $450.00</button>`
-              );
-              setTimeout(() => {
-                document.getElementById('confirmPayment')?.addEventListener('click', () => {
-                  closeDynamicModal();
-                  showToast('Payment of $450.00 submitted successfully!');
-                });
-              }, 50);
-              return;
-            }
-            if (action === 'report-issue') {
-              document.getElementById('issueTextarea')?.focus();
-              return;
-            }
-            if (action === 'submit-issue') {
-              const textarea = document.getElementById('issueTextarea');
-              const text = textarea?.value?.trim();
-              if (!text) {
-                showToast('Please describe the issue before submitting.', 'warning');
+        var actionBtns = document.querySelectorAll('[data-action]');
+        for (var i = 0; i < actionBtns.length; i++) {
+          actionBtns[i].addEventListener('click', (function(element) {
+            return function() {
+              var action = element.getAttribute('data-action');
+              if (action === 'open-wizard') {
+                var wizardBtn = document.getElementById('openWizard');
+                if (wizardBtn) wizardBtn.click();
                 return;
               }
-              if (textarea) textarea.value = '';
-              const upload = document.getElementById('photoUpload');
-              if (upload) upload.value = '';
-              showToast('Maintenance issue reported successfully!');
-              return;
-            }
-            if (action === 'review') {
-              const alertType = element.getAttribute('data-alert');
-              const isBurst = alertType === 'burst-water-pipe';
-              openModal(
-                isBurst ? 'Review: Burst Water Pipe' : 'Review: Rent Overdue',
-                isBurst
-                  ? `<div style="display:grid;gap:1rem;">
-                      <div class="field-box"><label>Property</label><div style="color:var(--ink-900);">123 Smith St, Surry Hills NSW</div></div>
-                      <div class="field-box"><label>Issue</label><div style="color:var(--ink-900);">Burst water pipe in kitchen. Water leaking into downstairs unit.</div></div>
-                      <div class="field-box"><label>SLA Deadline</label><div style="color:var(--red-700);font-weight:600;">14 hours remaining</div></div>
-                      <div class="field-box"><label>Tenant</label><div style="color:var(--ink-900);">Alex Taylor</div></div>
-                    </div>`,
-                  `<div style="display:grid;gap:1rem;">
-                      <div class="field-box"><label>Tenant</label><div style="color:var(--ink-900);">John Doe</div></div>
-                      <div class="field-box"><label>Property</label><div style="color:var(--ink-900);">123 Smith St, Surry Hills NSW</div></div>
-                      <div class="field-box"><label>Amount Due</label><div style="color:var(--ink-900);">$450.00</div></div>
-                      <div class="field-box"><label>Days Overdue</label><div style="color:var(--amber-800);font-weight:600;">3 days</div></div>
-                    </div>`,
-                `<button class="btn primary" id="dismissReview">Acknowledge</button>`
-              );
-              setTimeout(() => {
-                document.getElementById('dismissReview')?.addEventListener('click', () => {
-                  closeDynamicModal();
-                  showToast(isBurst ? 'Maintenance team has been notified.' : 'Overdue notice acknowledged.');
-                });
-              }, 50);
-              return;
-            }
-            if (action === 'snooze') {
-              element.closest('[data-alert]')?.remove();
-              showToast('Alert snoozed for 24 hours.');
-              return;
-            }
-          });
-        });
+              if (action === 'pay-rent') {
+                openModal(
+                  'Pay Rent',
+                  '<div style="display:grid;gap:1.25rem;">' +
+                  '<div style="text-align:center;padding:1rem 0;">' +
+                  '<p style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.2em;font-weight:600;color:var(--sage-700);margin:0;">Amount Due</p>' +
+                  '<p style="font-size:2.5rem;font-weight:700;margin:0.5rem 0 0;">$450.00</p>' +
+                  '<p style="color:var(--slate-500);margin:0.25rem 0 0;">Due Tuesday, July 7</p>' +
+                  '</div>' +
+                  '<label class="field-box" style="padding:0;border:0;">' +
+                  '<span style="display:block;font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;">Payment method</span>' +
+                  '<select style="width:100%;border:1px solid var(--slate-200);border-radius:0.8rem;padding:0.8rem 0.9rem;outline:none;background:white;">' +
+                  '<option>Visa ending in 4242</option>' +
+                  '<option>Bank transfer</option>' +
+                  '</select>' +
+                  '</label>' +
+                  '</div>',
+                  '<button class="btn primary" id="confirmPayment">Pay $450.00</button>'
+                );
+                setTimeout(function() {
+                  var payBtn = document.getElementById('confirmPayment');
+                  if (payBtn) {
+                    payBtn.addEventListener('click', function() {
+                      closeDynamicModal();
+                      showToast('Payment of $450.00 submitted successfully!');
+                    });
+                  }
+                }, 50);
+                return;
+              }
+              if (action === 'report-issue') {
+                var ta = document.getElementById('issueTextarea');
+                if (ta) ta.focus();
+                return;
+              }
+              if (action === 'submit-issue') {
+                var textarea = document.getElementById('issueTextarea');
+                var text = '';
+                if (textarea && textarea.value) {
+                  text = textarea.value.trim();
+                }
+                if (!text) {
+                  showToast('Please describe the issue before submitting.', 'warning');
+                  return;
+                }
+                if (textarea) textarea.value = '';
+                var upload = document.getElementById('photoUpload');
+                if (upload) upload.value = '';
+                showToast('Maintenance issue reported successfully!');
+                return;
+              }
+              if (action === 'review') {
+                var alertType = element.getAttribute('data-alert');
+                var isBurst = alertType === 'burst-water-pipe';
+                openModal(
+                  isBurst ? 'Review: Burst Water Pipe' : 'Review: Rent Overdue',
+                  isBurst
+                    ? '<div style="display:grid;gap:1rem;">' +
+                    '<div class="field-box"><label>Property</label><div style="color:var(--ink-900);">123 Smith St, Surry Hills NSW</div></div>' +
+                    '<div class="field-box"><label>Issue</label><div style="color:var(--ink-900);">Burst water pipe in kitchen. Water leaking into downstairs unit.</div></div>' +
+                    '<div class="field-box"><label>SLA Deadline</label><div style="color:var(--red-700);font-weight:600;">14 hours remaining</div></div>' +
+                    '<div class="field-box"><label>Tenant</label><div style="color:var(--ink-900);">Alex Taylor</div></div>' +
+                    '</div>'
+                    : '<div style="display:grid;gap:1rem;">' +
+                    '<div class="field-box"><label>Tenant</label><div style="color:var(--ink-900);">John Doe</div></div>' +
+                    '<div class="field-box"><label>Property</label><div style="color:var(--ink-900);">123 Smith St, Surry Hills NSW</div></div>' +
+                    '<div class="field-box"><label>Amount Due</label><div style="color:var(--ink-900);">$450.00</div></div>' +
+                    '<div class="field-box"><label>Days Overdue</label><div style="color:var(--amber-800);font-weight:600;">3 days</div></div>' +
+                    '</div>',
+                  '<button class="btn primary" id="dismissReview">Acknowledge</button>'
+                );
+                setTimeout(function() {
+                  var dismissBtn = document.getElementById('dismissReview');
+                  if (dismissBtn) {
+                    dismissBtn.addEventListener('click', function() {
+                      closeDynamicModal();
+                      showToast(isBurst ? 'Maintenance team has been notified.' : 'Overdue notice acknowledged.');
+                    });
+                  }
+                }, 50);
+                return;
+              }
+              if (action === 'snooze') {
+                var parent = element.closest('[data-alert]');
+                if (parent) parent.remove();
+                showToast('Alert snoozed for 24 hours.');
+                return;
+              }
+            };
+          })(actionBtns[i]));
+        }
       }
 
       window.addEventListener('hashchange', render);
